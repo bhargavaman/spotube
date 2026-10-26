@@ -124,6 +124,18 @@ class PluginUpdateService(
         }
     }
 
+    fun installUpdate() {
+        val update = _availableUpdate.value ?: return
+        _availableUpdate.value = null
+        scope.launch {
+            runCatching {
+                pluginManager.updatePluginFromURL(update.info.directDownloadUrl)
+            }.onFailure { e ->
+                logger.e(e) { "Failed to install update for plugin ${update.pluginName}" }
+            }
+        }
+    }
+
     fun dismissUpdate() {
         _availableUpdate.value = null
     }

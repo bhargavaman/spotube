@@ -20,7 +20,10 @@ package org.spotube.spotube.modules.update
 import org.spotube.millennium.composables.MillenniumAlertDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import org.spotube.spotube.core.ui.theming.AppTheme
 import com.composeunstyled.Text
@@ -40,7 +43,7 @@ import spotube.composeapp.generated.resources.update_action_update
 
 /**
  * Prompts the user that a newer version of one of their installed plugins is
- * available. [onUpdate] should open the plugin's direct download URL; [onIgnore]
+ * available. [onUpdate] should download and install the update; [onIgnore]
  * persistently silences this specific plugin version so the check moves on to the
  * next newer one (or another plugin).
  */
@@ -53,6 +56,7 @@ fun PluginUpdateDialog(
     MillenniumAlertDialog(
         visible = true,
         onDismissRequest = onDismiss,
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
         title = {
             Text(
                 stringResource(
