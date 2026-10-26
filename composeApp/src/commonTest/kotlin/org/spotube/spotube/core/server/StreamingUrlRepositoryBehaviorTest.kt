@@ -8,6 +8,8 @@ import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
 import org.spotube.spotube.core.audioplayer.QueueEntry
 import org.spotube.spotube.modules.settings.UserSettings
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -128,6 +130,22 @@ class StreamingUrlRepositoryBehaviorTest {
         val h = Harness()
         val info = h.repository.resolveStreamInfo(track("t1"))
         assertNull(info)
+    }
+
+    @Test
+    fun `waits for an audio plugin that is still loading`() = runTest {
+        val h = Harness()
+        val loader = launch {
+            delay(5_000)
+            h.selectPlugin("pluginA").audioAPI.onGetStreamsByTrack = {
+                listOf(streamedSource("src1", listOf(stream("https://example.com/a.opus"))))
+            }
+        }
+
+        val info = h.repository.resolveStreamInfo(track("t1"))
+        loader.join()
+
+        assertEquals("https://example.com/a.opus", info?.url)
     }
 
     @Test

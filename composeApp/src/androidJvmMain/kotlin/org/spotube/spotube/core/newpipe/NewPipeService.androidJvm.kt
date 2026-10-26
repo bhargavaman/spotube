@@ -162,14 +162,6 @@ actual class NewPipeService {
  * "aac"/"mp4". Without this a real AAC stream never matched the preference, and the hard-coded
  * aac/mp4 DASH/HLS manifests always won instead.
  */
-private fun normalizeCodec(codec: String?): String {
-    val value = codec.orEmpty()
-    return if (value.startsWith("mp4a", ignoreCase = true)) "aac" else value
-}
-
-private fun normalizeContainer(suffix: String): String =
-    if (suffix.equals("m4a", ignoreCase = true)) "mp4" else suffix
-
 private fun DeliveryMethod.toProtocol(): StreamProtocol = when (this) {
     DeliveryMethod.DASH -> StreamProtocol.DASH
     DeliveryMethod.HLS -> StreamProtocol.HLS

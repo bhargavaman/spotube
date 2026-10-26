@@ -54,7 +54,7 @@ class SettingsRepository(private val database: Database) : UserSettingsSource {
     override val userSettings: StateFlow<UserSettings> = database.settingsDataStore.data.map { prefs ->
         val json = prefs[SETTINGS_KEY]
         if (json != null) {
-            settingsJson.decodeFromString<UserSettings>(json as String)
+            settingsJson.decodeFromString<UserSettings>(json as String).withPlayableStreamingFormat()
         } else {
             UserSettings() // Default value
         }
@@ -73,6 +73,6 @@ class SettingsRepository(private val database: Database) : UserSettingsSource {
     suspend fun getCurrentSettings(): UserSettings {
         val preferences = database.settingsDataStore.data.first()
         val storedJson = preferences[SETTINGS_KEY] ?: return UserSettings()
-        return settingsJson.decodeFromString<UserSettings>(storedJson)
+        return settingsJson.decodeFromString<UserSettings>(storedJson).withPlayableStreamingFormat()
     }
 }

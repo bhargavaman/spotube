@@ -17,6 +17,9 @@
 
 package org.spotube.spotube.modules.settings
 
+import org.spotube.spotube.core.server.isContainerPlayableOn
+import org.spotube.spotube.core.server.currentPlatform
+import org.spotube.spotube.PlatformType
 import org.spotube.plugin_interfaces.plugin_apis.audio.AudioFormat
 import org.spotube.plugin_interfaces.plugin_apis.audio.AudioQuality
 import kotlinx.serialization.SerialName
@@ -42,15 +45,7 @@ data class UserSettings(
     val palette: MillenniumPalette = MillenniumPalette.Blue,
 
     // Playback
-    val streamingMusicFormat: AudioFormat = AudioFormat(
-        codec = "opus",
-        container = "webm",
-        qualities = listOf(
-            AudioQuality.Lossy(bitrate = 44_000),
-            AudioQuality.Lossy(bitrate = 96_000),
-            AudioQuality.Lossy(bitrate = 128_000),
-            AudioQuality.Lossy(bitrate = 256_000))
-    ),
+    val streamingMusicFormat: AudioFormat = defaultStreamingMusicFormat(),
     val streamingMusicQuality: AudioQuality = AudioQuality.Lossy(bitrate = 256_000),
     val enableMusicCaching: Boolean = true,
     val cacheFolder: String? = null,
@@ -111,3 +106,24 @@ data class JamBroker(
     val clientIdPrefix: String = "spotube",
     val keepAliveSeconds: Int = 30,
     val connectionTimeoutSeconds: Int = 10)
+
+/**
+ * opus/webm everywhere except iOS, whose AVPlayer can't open WebM/Ogg, so it streams AAC.
+ * TODO: revisit once iOS can play Opus (e.g. remuxing to CAF or a non-AVPlayer backend).
+ */
+internal fun defaultStreamingMusicFormat(platform: PlatformType = currentPlatform): AudioFormat {
+    val ios = platform == PlatformType.IOS
+    return AudioFormat(
+        codec = if (ios) "aac" else "opus",
+        container = if (ios) "mp4" else "webm",
+        qualities = listOf(
+            AudioQuality.Lossy(bitrate = 44_000),
+            AudioQuality.Lossy(bitrate = 96_000),
+            AudioQuality.Lossy(bitrate = 128_000),
+            AudioQuality.Lossy(bitrate = 256_000)))
+}
+
+/** Moves settings saved with a streaming format [platform] can't play (iOS' old opus/webm default) to the default. */
+internal fun UserSettings.withPlayableStreamingFormat(platform: PlatformType = currentPlatform): UserSettings =
+    if (isContainerPlayableOn(streamingMusicFormat.container, platform)) this
+    else copy(streamingMusicFormat = defaultStreamingMusicFormat(platform))
