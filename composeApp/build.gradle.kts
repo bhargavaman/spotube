@@ -68,7 +68,7 @@ val isProductionBuild = providers.gradleProperty("production").map { it.toBoolea
     }
 )
 val targetName = "Spotube"
-val homePageUrl = "https://spotube.org"
+val homePageUrl = "https://spotube.cc"
 val repositoryUrl = "https://github.com/team-spotube/spotube"
 val appVersionName = version
 val appBuildNumber = if (isNightly) nightlyBuildNumber else buildNumber

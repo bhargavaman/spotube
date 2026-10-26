@@ -253,7 +253,7 @@ fun App(
                         onDismiss = appUpdateService::dismissUpdate,
                         onIgnore = appUpdateService::ignoreUpdate,
                         onUpdate = {
-                            runCatching { openUrlInBrowser("https://spotube.org/downloads/") }
+                            runCatching { openUrlInBrowser("https://spotube.cc/downloads/") }
                             appUpdateService.dismissUpdate()
                         })
                 }
