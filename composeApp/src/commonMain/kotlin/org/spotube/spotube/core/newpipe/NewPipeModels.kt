@@ -50,3 +50,13 @@ data class MediaStream(
     val bitrate: Int,
     val isAudio: Boolean,
     val isVideo: Boolean)
+
+/** Maps NewPipe's codec names onto the plugin's AudioFormat names (mp4a.40.2 → aac). */
+internal fun normalizeCodec(codec: String?): String {
+    val value = codec.orEmpty()
+    return if (value.startsWith("mp4a", ignoreCase = true)) "aac" else value
+}
+
+/** Maps NewPipe's file suffixes onto the plugin's AudioFormat containers (m4a → mp4). */
+internal fun normalizeContainer(suffix: String): String =
+    if (suffix.equals("m4a", ignoreCase = true)) "mp4" else suffix

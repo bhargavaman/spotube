@@ -23,13 +23,18 @@ import org.spotube.plugin_interfaces.plugin_apis.audio.AudioQuality
 import org.spotube.plugin_interfaces.plugin_apis.audio.AudioStream
 import org.spotube.plugin_interfaces.plugin_apis.audio.StreamProtocol
 import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
+import org.spotube.spotube.PlatformType
 import org.spotube.spotube.core.audioplayer.AudioPlayerQueue
 import org.spotube.spotube.core.audioplayer.QueueEntry
 import org.spotube.spotube.core.di.injectLogger
+import org.spotube.spotube.getPlatform
 import org.spotube.spotube.modules.plugin.AudioPluginSource
 import org.spotube.spotube.modules.settings.UserSettingsSource
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.core.component.KoinComponent
 import kotlin.math.abs
 import kotlin.time.Clock
@@ -111,7 +116,14 @@ class StreamingUrlRepository(
         // read it, nor replace it with a stream playback didn't ask for.
         val useUrlCache = request == null
 
+        // A built-in audio plugin is always selected, so null means plugins are still loading.
+        // The player requests the restored queue's track right at startup; failing that request
+        // leaves the item permanently failed (AVPlayer), so wait for the plugin instead.
         val audioPlugin = pluginManager.selectedAudioPlugin.value
+            ?: withTimeoutOrNull(AUDIO_PLUGIN_LOAD_TIMEOUT) {
+                logger.i { "[Resolve $trackId] waiting for the audio plugin to load" }
+                pluginManager.selectedAudioPlugin.filterNotNull().first()
+            }
         if (audioPlugin == null) {
             logger.w { "No audio plugin selected while resolving stream for track $trackId" }
             return null
@@ -243,10 +255,12 @@ class StreamingUrlRepository(
         logger.i {
             "[Resolve $trackId] selecting from ${streams.size} candidates ($origin), " +
                 "want ${preferredFormat.codec}/${preferredFormat.container} $preferredQuality " +
-                "(rank key = formatMismatch, qualityTypeMismatch, qualityDistance, channelDistance; lowest wins):\n" +
+                "(rank key = unplayable, formatMismatch, qualityTypeMismatch, qualityDistance, channelDistance; " +
+                "lowest wins):\n" +
                 streams.joinToString("\n") { stream ->
                     val marker = if (stream === selected) "  -> " else "     "
-                    "$marker${stream.describeForLog()} key=(${formatMismatchCount(stream, preferredFormat)}, " +
+                    "$marker${stream.describeForLog()} key=(${if (stream.isPlayableOn(currentPlatform)) 0 else 1}, " +
+                        "${formatMismatchCount(stream, preferredFormat)}, " +
                         "${if (stream.matchesQualityType(preferredQuality)) 0 else 1}, " +
                         "${stream.qualityDistance(preferredQuality).let { if (it == Long.MAX_VALUE) "inf" else "$it" }}, " +
                         "${stream.channelDistance(preferredQuality)}) ${urlSummary(stream.url)}"
@@ -254,6 +268,10 @@ class StreamingUrlRepository(
         }
         when {
             selected == null -> logger.w { "[Resolve $trackId] no stream selected" }
+            !selected.isPlayableOn(currentPlatform) -> logger.w {
+                "[Resolve $trackId] NO PLAYABLE STREAM on $currentPlatform; falling back to " +
+                    "${selected.describeForLog()}, which the player will likely reject"
+            }
             formatMismatchCount(selected, preferredFormat) > 0 -> logger.w {
                 "[Resolve $trackId] FORMAT FALLBACK: wanted ${preferredFormat.codec}/${preferredFormat.container}, " +
                     "got ${selected.codec}/${selected.container} (${selected.protocol})"
@@ -371,6 +389,8 @@ class StreamingUrlRepository(
  * Resolves a stream URL to an absolute URL. Relative manifest paths (DASH/HLS) are
  * resolved against the YouTube origin; progressive URLs are returned unchanged.
  */
+private val AUDIO_PLUGIN_LOAD_TIMEOUT = 30.seconds
+
 internal fun normalizeManifestUrl(url: String, protocol: StreamProtocol): String {
     if (url.startsWith("http")) return url
     return when (protocol) {
@@ -379,12 +399,21 @@ internal fun normalizeManifestUrl(url: String, protocol: StreamProtocol): String
     }
 }
 
-/** Selects the available stream closest to the user's preferred format and quality. */
+internal val currentPlatform: PlatformType by lazy { getPlatform().type }
+
+/**
+ * Selects the available stream closest to the user's preferred format and quality.
+ * Streams the [platform]'s player can decode always win over ones it can't, whatever the
+ * preferences say: e.g. opus/webm is unplayable on iOS.
+ */
 internal fun selectPreferredAudioStream(
     streams: List<AudioStream>,
     preferredFormat: AudioFormat,
-    preferredQuality: AudioQuality): AudioStream? = streams.minWithOrNull(
+    preferredQuality: AudioQuality,
+    platform: PlatformType = currentPlatform): AudioStream? = streams.minWithOrNull(
     compareBy<AudioStream> { stream ->
+        if (stream.isPlayableOn(platform)) 0 else 1
+    }.thenBy { stream ->
         formatMismatchCount(stream, preferredFormat)
     }.thenBy { stream ->
         if (stream.matchesQualityType(preferredQuality)) 0 else 1
@@ -394,6 +423,21 @@ internal fun selectPreferredAudioStream(
         stream.channelDistance(preferredQuality)
     }
 )
+
+// AVPlayer has no WebM/Ogg/Matroska demuxer, so e.g. YouTube's opus/webm streams fail to load.
+private val IOS_UNSUPPORTED_CONTAINERS = setOf("webm", "ogg", "oga", "mkv", "matroska")
+
+/**
+ * Whether [platform]'s player can play this stream. VLC (desktop) and ExoPlayer (Android)
+ * handle everything plugins return; AVPlayer (iOS) can't demux WebM/Ogg and can't play DASH.
+ */
+internal fun AudioStream.isPlayableOn(platform: PlatformType): Boolean =
+    isContainerPlayableOn(container, platform) &&
+        !(platform == PlatformType.IOS && protocol == StreamProtocol.DASH)
+
+/** Whether [platform]'s player can open [container] at all; see [AudioStream.isPlayableOn]. */
+internal fun isContainerPlayableOn(container: String, platform: PlatformType): Boolean =
+    platform != PlatformType.IOS || container.lowercase() !in IOS_UNSUPPORTED_CONTAINERS
 
 private fun formatMismatchCount(stream: AudioStream, preferredFormat: AudioFormat): Int =
     (if (stream.codec.equals(preferredFormat.codec, ignoreCase = true)) 0 else 1) +

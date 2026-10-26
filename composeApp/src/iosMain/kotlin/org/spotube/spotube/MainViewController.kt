@@ -27,6 +27,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.yushosei.newpipe.extractor.NewPipe
 import com.yushosei.newpipe.util.DefaultDownloaderImpl
 import org.spotube.spotube.core.di.initKoin
+import org.spotube.spotube.core.webview.SafariUserAgent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +36,7 @@ import org.koin.core.component.inject
 
 fun MainViewController() = ComposeUIViewController(configure = {
     initKoin()
+    SafariUserAgent.prime()
 }) { InitNewPipe { App() } }
 
 @Composable

@@ -77,9 +77,9 @@ actual class NewPipeService {
                     .map { stream ->
                         org.spotube.plugin_interfaces.plugin_apis.audio.AudioStream.Lossy(
                             url = stream.content,
-                            codec = stream.codec ?: "unknown",
+                            codec = normalizeCodec(stream.codec ?: "unknown"),
                             bitrate = stream.bitrate,
-                            container = stream.format?.suffix ?: "unknown")
+                            container = normalizeContainer(stream.format?.suffix ?: "unknown"))
                     },
                 videoStreams = listOf(), // Not yet supported
                 id = id

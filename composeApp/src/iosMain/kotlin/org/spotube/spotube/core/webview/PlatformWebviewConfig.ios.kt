@@ -27,6 +27,8 @@ import platform.WebKit.WKWebsiteDataTypeCookies
 import platform.WebKit.WKWebsiteDataTypeLocalStorage
 
 actual fun platformWebviewConfig(webView: WebViewState, pluginId: String?) {
+    // Applied to the WKWebView itself, so it covers redirects and XHR too, not just the first request.
+    SafariUserAgent.value?.let { webView.webSettings.customUserAgentString = it }
 }
 
 @OptIn(ExperimentalForeignApi::class)

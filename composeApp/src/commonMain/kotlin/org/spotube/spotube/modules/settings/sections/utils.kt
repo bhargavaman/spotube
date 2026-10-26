@@ -18,6 +18,8 @@
 package org.spotube.spotube.modules.settings.sections
 
 
+import org.spotube.spotube.core.server.isContainerPlayableOn
+import org.spotube.spotube.core.server.currentPlatform
 import org.spotube.millennium.composables.MillenniumIcon
 import org.spotube.millennium.composables.MillenniumSeparator
 import org.spotube.millennium.theme.MillenniumTheme
@@ -56,6 +58,7 @@ private val standardLossyQualities = listOf(
     AudioQuality.Lossy(bitrate = 128_000),
     AudioQuality.Lossy(bitrate = 256_000))
 
+// Formats the platform's player can't open aren't offered (iOS: no WebM/Ogg).
 internal val streamingFormatPresets = listOf(
     AudioFormat(
         codec = "opus",
@@ -68,7 +71,8 @@ internal val streamingFormatPresets = listOf(
     AudioFormat(
         codec = "vorbis",
         container = "ogg",
-        qualities = standardLossyQualities))
+        qualities = standardLossyQualities)
+).filter { isContainerPlayableOn(it.container, currentPlatform) }
 
 internal val downloadFormatPresets = listOf(
     AudioFormat(
