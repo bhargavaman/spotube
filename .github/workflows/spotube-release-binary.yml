@@ -514,6 +514,75 @@ jobs:
         with:
           limit-access-to-actor: true
 
+  build-ios:
+    name: iOS
+    needs: prepare-deps
+    timeout-minutes: 120
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download maven local
+        uses: actions/download-artifact@v8
+        with:
+          name: maven-local
+          path: ~/.m2/repository/
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # Unsigned on purpose: there is no Apple developer account in CI. The IPA is meant for sideloading
+      # (AltStore, Sideloadly, ...), which re-signs it with the user's own certificate.
+      # The Gradle build phase inside Xcode reads these as project properties.
+      - name: Build unsigned app
+        env:
+          ORG_GRADLE_PROJECT_nightly: ${{ inputs.release_type == 'nightly' }}
+          ORG_GRADLE_PROJECT_buildNumber: ${{ github.run_number }}
+        run: >
+          xcodebuild
+          -project iosApp/iosApp.xcodeproj
+          -scheme iosApp
+          -configuration Release
+          -sdk iphoneos
+          -destination 'generic/platform=iOS'
+          -derivedDataPath build/ios
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGN_IDENTITY=""
+          DEVELOPMENT_TEAM=""
+          build
+
+      - name: Package IPA
+        run: |
+          APP=$(find build/ios/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" -type d | head -1)
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry Spotube-ios.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-ipa
+          path: Spotube-ios.ipa
+
+      - name: Setup tmate session on failure
+        if: ${{ inputs.debug_ssh && failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
   create-release:
     name: Create GitHub Release
     if: ${{ !inputs.dry_run }}
@@ -523,6 +592,7 @@ jobs:
       - build-linux-arm64
       - build-windows
       - build-macos
+      - build-ios
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -572,7 +642,7 @@ jobs:
         run: |
           echo "## Downloads" > release-notes.md
           echo "" >> release-notes.md
-          for dir in android-apk linux-deb linux-rpm linux-appimage linux-tarball linux-deb-arm64 linux-rpm-arm64 linux-appimage-arm64 linux-tarball-arm64 windows-exe macos-dmg; do
+          for dir in android-apk linux-deb linux-rpm linux-appimage linux-tarball linux-deb-arm64 linux-rpm-arm64 linux-appimage-arm64 linux-tarball-arm64 windows-exe macos-dmg ios-ipa; do
             if [ -d "$dir" ]; then
               echo "### $dir" >> release-notes.md
               for f in "$dir"/*; do
@@ -612,3 +682,4 @@ jobs:
             linux-tarball-arm64/*.tar.xz
             windows-exe/*.exe
             macos-dmg/*.dmg
+            ios-ipa/*.ipa
