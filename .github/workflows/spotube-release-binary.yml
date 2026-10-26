@@ -652,13 +652,6 @@ jobs:
             fi
           done
 
-      # The rolling nightly tag already exists, and the release action never moves an existing tag
-      - name: Move nightly tag to this commit
-        if: ${{ inputs.release_type == 'nightly' }}
-        run: |
-          git tag -f nightly "$GITHUB_SHA"
-          git push -f origin refs/tags/nightly
-
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
