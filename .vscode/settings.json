@@ -1,4 +1,6 @@
 {
+  "gradle.autoDetect": "off",
+  "java.gradle.buildServer.enabled": "off",
   "cmake.configureOnOpen": false,
   "cSpell.words": [
     "acousticness",
