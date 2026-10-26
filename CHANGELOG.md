@@ -25,6 +25,8 @@
 - Add plugin audio source models and api service
 - **plugins**: Filter plugins by abilities in plugins page and show abilities as
   badge
+- **plugins**: Filter plugins by abilities in plugins page and show abilities as
+  badge
 - Add setting default audio source support
 - Move away from track source query and preferences audio quality and codec
 - Add NewPipe support for desktop platforms
@@ -54,6 +56,8 @@
 - **metadata-plugin**: Add pagination support, feed and playlist CRUD endpoints
 - **metadata-plugin**: Add local storage api
 - Add webview, totp and setInterval apis for plugins
+- Enhance local storage and webview APIs with improved error handling and
+  resource management
 - Enhance local storage and webview APIs with improved error handling and
   resource management
 - **metadata_plugin**: Add logout method
@@ -94,6 +98,8 @@
 - Inaccessible streaming url causing rapid skips
 - **yt**: Fallback to different search result if all streaming url is
   inaccessible
+- **yt**: Fallback to different search result if all streaming url is
+  inaccessible
 - **playback**: Skip network requests if cached file already exists
 - Yt-dlp playback not working and add partial support for HLS streaming
 - Windows webview2 environment permission issue
@@ -128,6 +134,10 @@
   playlist page
 - **desktop**: double titlebar in local library folders and massive space in
   overlay player
+- **generate_playlist**: create playlist not adding tracks nor navigating to
+  playlist page
+- **desktop**: double titlebar in local library folders and massive space in
+  overlay player
 - lastfm form broken in other locales #2447
 - spotify login broken due to new totp requirement #2494
 - spotify authentication 429 errors
@@ -156,6 +166,8 @@
 - follow artist not working #2057
 - youtube_explode_dart failing for many videos due to youtube ios client visitor
   data change
+- youtube_explode_dart failing for many videos due to youtube ios client visitor
+  data change
 - piped api not working
 
 ### Features
@@ -176,6 +188,10 @@
 ### Bug Fixes
 
 - UI glitch when loading more user artists and albums
+- selecting an Alternative Track Source removes the current song from the queue
+  #2039
+- **mobile**: ensure audio session is activated when playback is resumed after
+  interruption #2092
 - selecting an Alternative Track Source removes the current song from the queue
   #2039
 - **mobile**: ensure audio session is activated when playback is resumed after
@@ -217,9 +233,13 @@
 - playlist displaying descriptions unescaped html #1784
 - **android**: pressing back while the player is open doesn't take to previous
   page
+- **android**: pressing back while the player is open doesn't take to previous
+  page
 - handle dublicated items in playback queue correctly #1852
 - **desktop**: scrollbar overlapping with more options of tracks and playlists
 - **discord**: stop discord rpc from try update presence when not connected
+- **stats**: minutes page shows plays and streams page shows minutes which
+  should be the opposite #1880
 - **stats**: minutes page shows plays and streams page shows minutes which
   should be the opposite #1880
 - **android**: clears queue upon swiping away notification
@@ -1657,7 +1677,11 @@
 
 - Playback Cache Support. So unfinished playlist and tracks remains cached &
   starts automatically when application is launched again
+- Playback Cache Support. So unfinished playlist and tracks remains cached &
+  starts automatically when application is launched again
 - Login Screen guided tutorial about how to obtain Client ID & Client Secret
+- Signed Android Application so now longer need to uninstall the old version for
+  installing the new one
 - Signed Android Application so now longer need to uninstall the old version for
   installing the new one
 - OS Media controls for Linux. Keyboard media keys now work in Linux
@@ -1681,7 +1705,15 @@
   vibrant gradient background in a Sliver
 - Playback is now more consistent & the API is simpler. Also its the single
   source of truth for AudioPlayback instead of the AudioServiceHandler
+- Playlist & Album Pages now show Album Art & extra metadata as Header with
+  vibrant gradient background in a Sliver
+- Playback is now more consistent & the API is simpler. Also its the single
+  source of truth for AudioPlayback instead of the AudioServiceHandler
 - Android Statusbar background color is now adaptive & less glitchy
+- Home Genre playlists can be scrolled horizontally by dragging with mouse even
+  in Desktop edition
+- Track match Cache support for previously played tracks. This dramatically
+  reduces track change latency & load on the YouTube search engine too
 - Home Genre playlists can be scrolled horizontally by dragging with mouse even
   in Desktop edition
 - Track match Cache support for previously played tracks. This dramatically
@@ -1792,6 +1824,8 @@
 - Authentication - allows guest accounts making authentication optional
 - Lyrics - can be fetched without requiring GeniusAccessToken. This makes
   geniusAccessToken optional
+- Lyrics - can be fetched without requiring GeniusAccessToken. This makes
+  geniusAccessToken optional
 - UI snappiness & faster load times
 - Simpler logic, faster calculations & better caching (flutter_hooks)
 - shared state management - uses riverpod & hooks combination
@@ -1806,6 +1840,8 @@
 
 ### New
 
+- Global custom reconfigurable _hotkey_ support for playback controls
+  (play-pause/next/previous)
 - Global custom reconfigurable _hotkey_ support for playback controls
   (play-pause/next/previous)
 - Credit section in the Settings page with important links
@@ -1857,6 +1893,10 @@
   accessing empty List error
 - `url_launcher`'s unstable `canLaunch` method blocks OAuth login in certain
   \*nix OSs
+- Unsafe access to album art/artist/user Images with `.first` or `.last` causing
+  accessing empty List error
+- `url_launcher`'s unstable `canLaunch` method blocks OAuth login in certain
+  \*nix OSs
 - Refresh token gets revoked & doesn't get renewed automatically
 
 # v1.0.1
@@ -1878,6 +1918,8 @@
 - mpv & youtube-dl runtime dependencies dropped (07b1891)
 - just_audio (libwinmedia + libwebkit2gtk-4.0-dev) + youtube_explode based
   playback & streaming
+- just_audio (libwinmedia + libwebkit2gtk-4.0-dev) + youtube_explode based
+  playback & streaming
 - lyrics are provided by genius.com (requires access_token) (d647d5e)
 - inno_setup based windows/win32 GUI installer (dbf8a34)
 
@@ -1895,6 +1937,8 @@
 
 - Automated installer for Windows (now doesn't require manual mpv-player
   install)
+- Automated installer for Windows (now doesn't require manual mpv-player
+  install)
 - Playback caching
 - Retry button for ManualLyricDialog
 - Support for downloading track
@@ -1904,9 +1948,13 @@
 
 - Inapp Shortcuts.Now it doesn't interfere while typing in a input box in Search
   page
+- Inapp Shortcuts.Now it doesn't interfere while typing in a input box in Search
+  page
 
 ### Bug fixes
 
+- Cached image didn't get deleted after exiting certain cache limit fix. Cache
+  gets recreated after exiting the limit
 - Cached image didn't get deleted after exiting certain cache limit fix. Cache
   gets recreated after exiting the limit
 
@@ -1927,10 +1975,14 @@
 
 - `access_token not found` Error after OAuth Login with Spotify credentials
   (used to need a restart of the app to load the access_token)
+- `access_token not found` Error after OAuth Login with Spotify credentials
+  (used to need a restart of the app to load the access_token)
 - Volume level wasn't cached even after changing volume
 
 # v0.0.1
 
+Spotube v0.0.1 - initial release of the open source software for playing Spotify
+music using Youtube public API
 Spotube v0.0.1 - initial release of the open source software for playing Spotify
 music using Youtube public API
 
@@ -1939,6 +1991,8 @@ music using Youtube public API
 - Local playback handling
 - Playback Queue
 - Save to Liked Tracks/Playlists
+- Bypass API rate limitation on basic usage using personal developer Apps for
+  spotify API
 - Bypass API rate limitation on basic usage using personal developer Apps for
   spotify API
 - Youtube search & get handled using scrape-yt
