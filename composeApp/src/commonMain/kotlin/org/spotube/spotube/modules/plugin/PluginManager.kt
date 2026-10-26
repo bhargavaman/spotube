@@ -116,6 +116,9 @@ class PluginManager(
     val paths: Paths,
     private val httpClientFactory: HttpClientFactory) : KoinComponent, PluginProvider, AudioPluginSource, ScrobblePluginSource {
     private val logger by injectLogger<PluginManager>()
+
+    // plugin.json may carry fields newer than this app knows about (e.g. `entryPoint`).
+    private val pluginJsonParser = Json { ignoreUnknownKeys = true }
     private val pluginExceptionHandler = CoroutineExceptionHandler { _, exception ->
         logger.e(exception) { "Plugin runtime threw an unhandled exception. Intercepted safely." }
     }
@@ -325,6 +328,15 @@ class PluginManager(
         }
     }
 
+    /** Downloads and installs a newer plugin build over the installed one, without prompting. */
+    suspend fun updatePluginFromURL(url: String) {
+        withContext(Dispatchers.IO) {
+            val response = httpClient.get(url)
+            val bytes = response.bodyAsChannel().readRemaining().readByteArray()
+            addPluginFromByteArray(bytes = bytes, allowReplacingInstalled = true)
+        }
+    }
+
     /** Parses the zip, reads plugin.json, then surfaces a PendingPlugin for the UI to confirm. */
     suspend fun preparePlugin(bytes: ByteArray) {
         withContext(Dispatchers.IO) {
@@ -363,7 +375,7 @@ class PluginManager(
                 val pluginJson =
                     FileSystem.SYSTEM.source(pluginJsonPath).buffer().use { it.readUtf8() }
                 val pluginEntry = try {
-                    Json.decodeFromString<PluginEntry>(pluginJson)
+                    pluginJsonParser.decodeFromString<PluginEntry>(pluginJson)
                 } catch (e: Exception) {
                     throw IllegalArgumentException(getString(Res.string.plugin_error_invalid_plugin_json, e.message.orEmpty()))
                 }
@@ -485,7 +497,7 @@ class PluginManager(
                 }
 
                 val pluginEntry = try {
-                    Json.decodeFromString<PluginEntry>(pluginJson)
+                    pluginJsonParser.decodeFromString<PluginEntry>(pluginJson)
                 } catch (e: Exception) {
                     throw IllegalArgumentException(getString(Res.string.plugin_error_invalid_plugin_json, e.message.orEmpty()))
                 }

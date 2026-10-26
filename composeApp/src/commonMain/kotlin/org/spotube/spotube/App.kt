@@ -262,10 +262,7 @@ fun App(
                         update = update,
                         onDismiss = pluginUpdateService::dismissUpdate,
                         onIgnore = pluginUpdateService::ignoreUpdate,
-                        onUpdate = {
-                            runCatching { openUrlInBrowser(update.info.directDownloadUrl) }
-                            pluginUpdateService.dismissUpdate()
-                        })
+                        onUpdate = pluginUpdateService::installUpdate)
                 }
                 SupportDialog(
                     visible = showSupportDialog,

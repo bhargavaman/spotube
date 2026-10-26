@@ -18,9 +18,18 @@
 package org.spotube.spotube.modules.plugin
 
 import com.goncalossilva.murmurhash.MurmurHash3
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonDecoder
 
+@Serializable
 enum class PluginCapability {
     @SerialName("persistent_storage")
     PERSISTENT_STORAGE,
@@ -43,6 +52,38 @@ enum class PluginAbility {
     SCROBBLE,
 }
 
+/**
+ * Decodes a list of enums while dropping values this app version doesn't know about, so a
+ * plugin.json written for another plugin API revision still parses.
+ */
+abstract class LenientEnumListSerializer<T : Enum<T>>(
+    private val elementSerializer: KSerializer<T>) : KSerializer<List<T>> {
+    private val listSerializer = ListSerializer(elementSerializer)
+    override val descriptor: SerialDescriptor = listSerializer.descriptor
+
+    override fun serialize(encoder: Encoder, value: List<T>) =
+        listSerializer.serialize(encoder, value)
+
+    override fun deserialize(decoder: Decoder): List<T> {
+        val jsonDecoder = decoder as? JsonDecoder ?: return listSerializer.deserialize(decoder)
+        val array = jsonDecoder.decodeJsonElement() as? JsonArray
+            ?: throw SerializationException("Expected a JSON array")
+        return array.mapNotNull { element ->
+            try {
+                jsonDecoder.json.decodeFromJsonElement(elementSerializer, element)
+            } catch (_: SerializationException) {
+                null
+            }
+        }
+    }
+}
+
+object LenientPluginCapabilityListSerializer :
+    LenientEnumListSerializer<PluginCapability>(PluginCapability.serializer())
+
+object LenientPluginAbilityListSerializer :
+    LenientEnumListSerializer<PluginAbility>(PluginAbility.serializer())
+
 @Serializable
 data class PluginEntry(
     val name: String,
@@ -50,7 +91,9 @@ data class PluginEntry(
     val apiVersion: String,
     val description: String,
     val author: String,
+    @Serializable(with = LenientPluginCapabilityListSerializer::class)
     val capabilities: List<PluginCapability>,
+    @Serializable(with = LenientPluginAbilityListSerializer::class)
     val abilities: List<PluginAbility>,
     val contact: String,
     val repository: String,
