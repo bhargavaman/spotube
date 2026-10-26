@@ -486,7 +486,16 @@ jobs:
         env:
           # Nucleus lists GraalVM CE releases via the GitHub API; unauthenticated calls hit the 60/hour limit
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :composeApp:packageGraalvmDmg -Pnightly=${{ inputs.release_type == 'nightly' }} -PbuildNumber=${{ github.run_number }}
+        # The free macOS runner has 3 cores / 7 GB. With the default 4g Gradle + 3g Kotlin daemons idling,
+        # native-image only gets ~3 GB and spends ~40% of its time in GC (47 min build vs ~15 on Linux).
+        # A single-use daemon with a smaller heap and in-process Kotlin compilation leaves the RAM to it.
+        run: >
+          ./gradlew :composeApp:packageGraalvmDmg
+          --no-daemon
+          -Dorg.gradle.jvmargs="-Xmx3g -XX:MaxMetaspaceSize=1g"
+          -Pkotlin.compiler.execution.strategy=in-process
+          -Pnightly=${{ inputs.release_type == 'nightly' }}
+          -PbuildNumber=${{ github.run_number }}
 
       - name: Rename macOS artifact
         run: |

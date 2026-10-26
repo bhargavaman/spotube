@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.0](https://github.com/team-spotube/spotube/compare/v5.1.2...v6.0.0) (2026-10-26)
+## [6.0.0-beta.0](https://github.com/team-spotube/spotube/compare/v5.1.2...v6.0.0-beta.0) (2026-10-26)
 
 ### Features
 
