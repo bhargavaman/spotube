@@ -48,6 +48,10 @@ plugins {
 
 val bundleId = "org.spotube.spotube"
 val version = "6.0.0"
+// Set to N to release <version>-beta.N (same app id, icons and name as stable); null for a plain stable release.
+// Installer metadata (packageVersion) must stay numeric, so it keeps using plain `version`.
+val betaNumber: Int? = 0
+// Betas share the stable app id, so bump this for every beta: Android only updates to a higher versionCode.
 val buildNumber = 46
 // Desktop icon channel; Android picks its icons via the stable/nightly product flavor. Use -Pnightly=true.
 val isNightly = providers.gradleProperty("nightly").map { it.toBoolean() }.getOrElse(false)
@@ -68,9 +72,9 @@ val isProductionBuild = providers.gradleProperty("production").map { it.toBoolea
     }
 )
 val targetName = "Spotube"
-val homePageUrl = "https://spotube.org"
+val homePageUrl = "https://spotube.cc"
 val repositoryUrl = "https://github.com/team-spotube/spotube"
-val appVersionName = version
+val appVersionName = if (betaNumber != null) "$version-beta.$betaNumber" else version
 val appBuildNumber = if (isNightly) nightlyBuildNumber else buildNumber
 val appRepositoryUrl = repositoryUrl
 // CI reads the release version from here instead of scraping this file.
@@ -375,8 +379,8 @@ android {
         applicationId = bundleId
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = buildNumber
-        versionName = version
+        versionCode = appBuildNumber
+        versionName = appVersionName
     }
     // stable = production channel, nightly = beta channel (own icon, name and installable side by side)
     flavorDimensions += "channel"

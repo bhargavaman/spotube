@@ -1,5 +1,156 @@
 # Changelog
 
+## [6.0.0-beta.0](https://github.com/team-spotube/spotube/compare/v5.1.2...v6.0.0-beta.0) (2026-10-26)
+
+### Features
+
+- Migration to Compose Multiplatform
+- Add ChipTab component and refactor SearchScreen to use it
+- Add AutocompleteTextField component and integrate it into SearchScreen
+- Enhance AutocompleteTextField with focus management and dropdown behavior
+- Enhance AppSidebar with improved button interactions and visual feedback
+- Implement endless playback recommendations in DeviceAudioPlayerQueue
+- Add GhostIconButton component and enhance button interactions in TrackList
+- Replace IconButton with GhostIconButton in AppExpandedPlayer and AppLargePlayer for improved visual consistency
+- Replace IconButton with GhostIconButton in PlayerQueueContent and PlayableCard for visual consistency
+- Enhance UI components with LocalBaseUITheme for consistent styling and improved interactions
+- Enhance button styles and interactions in Buttons and Theme components for improved UI consistency
+- Simplify highlight implementation in UI components for improved readability and maintainability
+- Add genre selection and tabs to HomeScreen for improved content navigation
+- Implement artist overview screen with loading, error handling, and pagination for albums, related artists, and featured playlists
+- Add genre and featured browsing capabilities to MediaBrowseHelper
+- Implement playlist creation and editing functionality with UI components
+- Add 'Add to Playlist' functionality with UI components and dialogs
+- Add Toggle component and update UI to use it in place of Switch
+- Implement settings section cards for updates, desktop, language, caching, and plugins
+- Update icons in settings sections to use Iconsax library for improved UI consistency
+- Replace FeatherIcons with Iconsax in PluginCard and PluginPermissionsDialog for improved UI consistency
+- Refactor PluginPermissionsDialog to use custom UI components for improved consistency and readability
+- Enhance UI with shared element transitions and improve state management in album and playlist screens
+- Integrate Uniffi for audio metadata reading and writing with Lofty library
+- Replace FeatherIcons with Iconsax in window controls and update sidebar with better design
+- Implement haze effect and UI enhancements in AppLargePlayer and AppShell
+- Enhance haze effect integration in AppShell and AppSidebar for improved UI experience
+- Add adaptive dialog bottom sheet component and enhance plugin installation UI
+- Enhance AdaptiveDialogBottomSheet with dismiss icon and improve plugin screen layout
+- Implement CollectionView component and refactor Album, Playlist, SavedTracks screens for improved UI consistency
+- Add current time management in AudioPlayer for improved playback control
+- Simplify playback control logic in AudioPlayer by removing redundant state checks
+- Introduce AudioPlayerInterface and refactor AudioPlayer implementations for better abstraction
+- Update skipToNext and skipToPrevious methods in AudioPlayer for improved media item management
+- Refactor LyricsViewModel to use AudioPlayerInterface for improved abstraction
+- Add Discord Rich Presence integration for enhanced media playback visibility
+- Implement System Tray integration for window management and media controls
+- Add hover effect to menu items in System Tray for improved user experience
+- Add SSH debug session setup on failure for improved troubleshooting
+- Implement blacklist functionality for tracks and artists with UI updates
+- **systemtray**: Self-manage tray lifecycle via Koin DI
+- **plugin_interfaces**: Update Maven publishing configuration and add GitHub Actions workflow
+- **plugin_discovery**: Implement GitHub plugin discovery and add logo support in UI
+- **plugin_discovery**: Implement GitHub plugin discovery and add logo support and information dialog in UI
+- **plugin_install**: Add plugin installation dialog and release fetching functionality
+- Update dependencies and configure compose hot reload settings
+- Improve NewPipe video rank matching
+- Integrate Nucleus framework for enhanced window management and webview support
+- Implement system tray functionality with Compose Native Tray integration
+- **mediacontrol**: Implement SystemMediaControlService for OS media integration
+- **devices**: Add device discovery and remote control features
+- **deeplinks**: Implement deep link handling for jam sessions
+- **remote-control**: Implement remote playback functionality and UI components
+- **remote-control**: Enhance queue management and player state synchronization
+- **remote-control**: Enhance remote playback functionality with new commands and UI integration
+- **webrtc**: Update ICE server configuration and enhance logging for peer connection events
+- **jam-session**: Add connection state management and update UI feedback for session status
+- **jam-session**: Enhance jam session functionality with improved playback synchronization and error handling
+- **remote-control**: Refactor service registration and cleanup logic for improved reliability
+- **jam-session**: Integrate MQTT broker configuration and enhance jam session settings
+- **jam-session**: Implement track addition to jam session and enhance UI feedback for jam state
+- **jam-session**: Enhance guest functionality with track addition and participant moderation options
+- **release**: Add support for Linux ARM64 builds and artifact uploads
+- **player-options**: Add PlayerOptionsViewModel and enhance player UI with options menu
+- **player-options**: Enhance options menu with localized strings and icons
+- **jam-settings**: Implement JamSettings screen and view model for broker configuration
+- Refactor track source management to support plugin-specific caching and retrieval
+- Implement shuffle play functionality for albums, playlists, and saved tracks
+- **navigation**: Refactor sidebar and bottombar navigation structure with new tab and group models
+- **search**: Enhance LazyRow with drag scrolling functionality
+- **autocomplete**: Simplify focus management and remove unused key event handling
+- **update**: Implement update checker with dialog for available updates
+- **update**: Refactor update checking mechanism and implement new dialog for app and plugin updates
+- **scrobble**: Implement ScrobbleManager to handle track scrobbling and integrate with audio player
+- **welcome**: Implement onboarding flow with multiple pages and donation options
+- **previews**: Add comprehensive previews for UI components including sliders, toggles, checkboxes, and text fields
+- **settings**: Add 'About' section and improve header visibility in settings sections
+- **surface**: Implement Frutiger-Aero themed surfaces with glass and acrylic styles
+- **ui**: Replace Scaffold with BaseScaffold for consistent surface theming across screens
+- **ui**: New custom surface integration on all components
+- **onboarding**: Enhance welcome screen with structured guide steps and improved layout
+- **player**: Add content descriptions for play, pause, and add to queue actions
+- **support**: Implement support reminder dialog and donation options
+- **player**: Refactor artist display and improve search field labels
+- **search**: Enhance search functionality with recent search suggestions and improved UI components
+- **sidebar**: Adjust spacing in sidebar and setting cards for improved layout
+- **jam**: Implement group jam functionality with UI components and state management
+- **library**: Enhance library UI with new tab titles, filtering options, and improved state management
+- **library**: Add Library screen list mode beside grid mode, Local Track, Download screen, Local Library folders dialog visual improvement
+- **ui**: Integrate LocalTextStyle for dynamic tinting in player controls and UI components
+- **navigation**: Add custom navigation transition specifications for push and pop actions
+- **i18n**: Replace hardcoded strings with localized resources across multiple components
+- **plugin**: Implement MetadataPluginGuard to manage plugin dependencies and user prompts
+- **ui**: Replace IndeterminateProgress with new loading components and enhance dialog structures
+- **ui**: Update MillenniumModalBottomSheet with compact padding and spacing adjustments
+- **plugin**: Add login prompt for metadata plugin access and implement authentication view model
+- **user-agents**: Implement dynamic user agent fetching and caching mechanism
+- **lyrics**: Implement SyncedLyricsList component and enhance LyricsViewModel for better state management
+- **server**: Implement port fallback mechanism for playback proxy server
+- **window**: Implement window state persistence and restoration
+- Enhance Android build configuration with stable/nightly flavors and update launcher icons
+- **graalvm**: Enable GraalVM native image support and update packaging configurations
+- **local-tracks**: Implement LocalFolder screen and view model for folder navigation
+- **navigation**: Implement fade-through and stack transition animations for navigation
+- **remote**: Redesign remote control and devices screens, fix connection issues
+- Download diagnostics, live connect status, remote settings on devices screen
+- Enhance loading states for various UI components and update dependencies
+- **packaging**: Flathub, AUR, WinGet and Chocolatey publishing
+- **plugin**: Implement automatic plugin updates and enhance JSON parsing
+
+### Bug Fixes
+
+- **newpipe**: Fallback to muxed streams if no audio stream is available
+- Dismiss search dropdown and keyboard on submission
+- Custom image helper null exception
+- **plugin**: Reload Zipline service on same-version replace
+- Convert buildCurrentMediaItemList to a suspend function for coroutine support
+- Enhance Discord RPC connection management with cooldown and error handling
+- Cached track audio not being invalidated causing alternative track source to not being played
+- Play next not working
+- Update pendingNextIndex when playing a track from the playlist
+- **webview**: Linux webview crashing the app
+- Add mavenLocal() to plugin and dependency resolution management
+- **plugin**: Handle service closure exception during authentication check
+- **sidebar**: Add spacer to AppSidebar for improved layout
+- **remote-control**: Update connection handling and improve logging for remote control events
+- Add window insets to top bar and bottom navigation bar, queue sheet
+- **stream-proxy**: Stream upstream audio instead of buffering the whole track
+- **newpipe**: Fall back through multiple searches when ISRC search misses
+- **audio-api**: Enhance fallback mechanism for text search results in YouTube
+- **audio-player**: Android shuffle wasnt working
+- **stream-proxy**: Improve logging for cache timeout and handle disconnection scenarios
+- **macos**: Add GraalVM runtime dependency and initialize GraalVm in main function
+- **android**: Create intermediate directories for Rust targets to prevent runtime errors
+- **android**: Update sharing functionality to use chooser intent with new task flag
+- **android**: Simplify service start logic for PlaybackService to avoid crashes on background playback
+- **android**: Update playback state management to ensure guests follow host's play state
+- **android**: App stuck on splash screen from main-thread string loading
+- **downloads**: Respect download format/quality and never save manifests or video
+- **ios**: Run Zipline on an 8 MiB stack thread
+- **server**: Don't crash when the proxy port is still in use
+- **ios**: Stream formats AVPlayer can play
+- **gradle**: Restore VFS watch setting and clean up properties
+- **build**: Restore version catalog lost in dev merge
+- **ios**: Make the login WebView identify as Mobile Safari
+- Update website URLs from spotube.org to spotube.cc
+
 ## [5.1.2](https://github.com/team-spotube/spotube/compare/v5.1.1...v5.1.2) (2026-06-05)
 
 ### Bug Fixes

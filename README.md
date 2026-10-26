@@ -4,7 +4,7 @@
 A cross-platform extensible open-source music streaming platform.<br>
 Bring your own music metadata/playlist/audio-source with plugins created by community or by yourself. A small step towards the decentralized music streaming era!
 
-<a href="https://spotube.org"><img alt="Visit the website" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/documentation/website_vector.svg"></a>
+<a href="https://spotube.cc"><img alt="Visit the website" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/documentation/website_vector.svg"></a>
 <a href="https://discord.gg/uJ94vxB6vg"><img alt="Discord Server" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/social/discord-plural_vector.svg"></a>
 
 <a href="https://patreon.com/krtirtho"><img alt="Support me on Patron" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/patreon-singular_vector.svg"></a>
@@ -37,11 +37,11 @@ Bring your own music metadata/playlist/audio-source with plugins created by comm
 
 ### ⬇️ Download
 
-Download Spotube from the Official Website: https://spotube.org
+Download Spotube from the Official Website: https://spotube.cc
 
 ### 🔄 Nightly Builds
 
-Grab the latest nightly builds of Spotube [from the Offical Website](https://spotube.org/downloads/nightly).
+Grab the latest nightly builds of Spotube [from the Offical Website](https://spotube.cc/downloads/nightly).
 
 ## 🕳️ Building from source
 
@@ -166,7 +166,7 @@ Android picks the Rust profile from its build type (`debug` or `release`) on its
 
 ### Releases
 
-Releases are built by [`spotube-release-binary.yml`](.github/workflows/spotube-release-binary.yml), run manually (`workflow_dispatch`) as `stable` or `nightly`. Each desktop platform (Linux x86_64 and aarch64, Windows, macOS) builds its native installers on its own runner. Android builds a signed APK.
+Releases are built by [`spotube-release-binary.yml`](.github/workflows/spotube-release-binary.yml), run manually (`workflow_dispatch`) as `stable`, `beta` or `nightly`. A beta is the stable build released like a stable release (draft, not a pre-release), tagged `v<version>-beta.N` (set `betaNumber` in `composeApp/build.gradle.kts` to N, and back to `null` for stable). Each desktop platform (Linux x86_64 and aarch64, Windows, macOS) builds its native installers on its own runner. Android builds a signed APK.
 
 ## 👥 The Spotube team
 
