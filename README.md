@@ -166,7 +166,7 @@ Android picks the Rust profile from its build type (`debug` or `release`) on its
 
 ### Releases
 
-Releases are built by [`spotube-release-binary.yml`](.github/workflows/spotube-release-binary.yml), run manually (`workflow_dispatch`) as `stable` or `nightly`. Each desktop platform (Linux x86_64 and aarch64, Windows, macOS) builds its native installers on its own runner. Android builds a signed APK.
+Releases are built by [`spotube-release-binary.yml`](.github/workflows/spotube-release-binary.yml), run manually (`workflow_dispatch`) as `stable`, `beta` or `nightly`. A beta is the stable build released like a stable release (draft, not a pre-release), tagged `v<version>-beta.N` (set `betaNumber` in `composeApp/build.gradle.kts` to N, and back to `null` for stable). Each desktop platform (Linux x86_64 and aarch64, Windows, macOS) builds its native installers on its own runner. Android builds a signed APK.
 
 ## 👥 The Spotube team
 

@@ -10,6 +10,7 @@ on:
         default: 'stable'
         options:
           - stable
+          - beta
           - nightly
       dry_run:
         description: 'Dry run (build & upload artifacts only, skip creating release)'
@@ -26,7 +27,7 @@ on:
 permissions:
   contents: read
 
-# Never cancel a running release when another is dispatched, and let stable and nightly run side by side
+# Never cancel a running release when another is dispatched, and let stable, beta and nightly run side by side
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.release_type }}
   cancel-in-progress: false
@@ -215,7 +216,7 @@ jobs:
           fi
           # Desktop entry + metainfo, with the release history from git-cliff
           ./gradlew :composeApp:renderPackagingLinux -Pnightly=${{ inputs.release_type == 'nightly' }} -PbuildNumber=${{ github.run_number }}
-          packaging/package-linux-tarball.sh "$VERSION" "${{ inputs.release_type }}" .
+          packaging/package-linux-tarball.sh "$VERSION" "${{ inputs.release_type == 'nightly' && 'nightly' || 'stable' }}" .
 
       - name: Upload tarball
         uses: actions/upload-artifact@v7
@@ -335,7 +336,7 @@ jobs:
           fi
           # Desktop entry + metainfo, with the release history from git-cliff
           ./gradlew :composeApp:renderPackagingLinux -Pnightly=${{ inputs.release_type == 'nightly' }} -PbuildNumber=${{ github.run_number }}
-          packaging/package-linux-tarball.sh "$VERSION" "${{ inputs.release_type }}" .
+          packaging/package-linux-tarball.sh "$VERSION" "${{ inputs.release_type == 'nightly' && 'nightly' || 'stable' }}" .
 
       - name: Upload tarball
         uses: actions/upload-artifact@v7
@@ -538,8 +539,9 @@ jobs:
       - name: Set release variables
         id: vars
         run: |
-          if [ "${{ inputs.release_type }}" = "stable" ]; then
+          if [ "${{ inputs.release_type }}" != "nightly" ]; then
             chmod +x gradlew
+            # printVersion includes the -beta.N suffix when betaNumber is set in build.gradle.kts
             VERSION=$(./gradlew -q :composeApp:printVersion)
             TAG="v${VERSION}"
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
