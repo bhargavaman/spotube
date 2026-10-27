@@ -366,6 +366,7 @@ kotlin {
                 implementation(libs.nucleus.decorated.window.tao)
                 implementation(libs.compose.native.tray)
                 implementation(libs.nucleus.media.control)
+                implementation(libs.nucleus.darkmode.detector)
             }
         }
     }

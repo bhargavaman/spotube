@@ -134,6 +134,7 @@ newpipeextractor = { module = "com.github.teamnewpipe:NewPipeExtractor", version
 nucleus-core-runtime = { module = "dev.nucleusframework:nucleus.core-runtime", version.ref = "nucleusNucleusApplication" }
 nucleus-decorated-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleusNucleusApplication" }
 nucleus-media-control = { module = "dev.nucleusframework:nucleus.media-control", version.ref = "nucleusNucleusApplication" }
+nucleus-darkmode-detector = { module = "dev.nucleusframework:nucleus.darkmode-detector", version.ref = "nucleusNucleusApplication" }
 nucleus-graalvm-runtime = { module = "dev.nucleusframework:nucleus.graalvm-runtime", version.ref = "nucleusNucleusApplication" }
 nucleus-nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleusNucleusApplication" }
 semver = { module = "net.swiftzer.semver:semver", version.ref = "semver" }
