@@ -61,9 +61,75 @@ jobs:
           echo "::error::Building a single platform is only supported for nightly releases"
           exit 1
 
+  # ComposeNativeWebview's JNI backends are gitignored and only built for the host OS, so a
+  # publish from macOS alone ships a jar without the Linux / Windows WebView libraries (the
+  # WebView then renders nothing). Build them on their own OS and hand them to prepare-deps.
+  build-webview-natives:
+    name: WebView Natives (${{ matrix.name }})
+    needs: validate-inputs
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: linux-x64
+            os: ubuntu-latest
+          - name: linux-aarch64
+            os: ubuntu-24.04-arm
+          - name: windows-x64
+            os: windows-latest
+    steps:
+      - name: Checkout ComposeNativeWebview
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.COMPOSE_WEBVIEW_REPO }}
+          ref: ${{ env.COMPOSE_WEBVIEW_COMMIT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: compose-webview
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Build Linux WebView native library
+        if: runner.os == 'Linux'
+        working-directory: compose-webview
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libcairo2-dev \
+            libsoup-3.0-dev libwebkit2gtk-4.1-dev
+          bash webview-compose/src/jvmMain/native/linux/build.sh
+
+      - name: Build Windows WebView native library
+        if: runner.os == 'Windows'
+        working-directory: compose-webview
+        shell: cmd
+        run: webview-compose\src\jvmMain\native\windows\build.bat
+
+      - name: Verify WebView native library
+        working-directory: compose-webview
+        shell: bash
+        run: |
+          case "${{ matrix.name }}" in
+            linux-*)     files="${{ matrix.name }}/libcompose_webview_linux.so" ;;
+            windows-x64) files="win32-x64/compose_webview_windows.dll win32-x64/WebView2Loader.dll" ;;
+          esac
+          for f in $files; do
+            test -f "webview-compose/src/jvmMain/resources/nucleus/native/$f" || { echo "::error::Missing $f"; exit 1; }
+          done
+
+      - name: Upload WebView native library
+        uses: actions/upload-artifact@v7
+        with:
+          name: webview-natives-${{ matrix.name }}
+          path: compose-webview/webview-compose/src/jvmMain/resources/nucleus/native/
+          retention-days: 1
+
   prepare-deps:
     name: Prepare Dependencies
-    needs: validate-inputs
+    needs: [validate-inputs, build-webview-natives]
     runs-on: macos-latest
     steps:
       - name: Checkout ComposeNativeWebview
@@ -73,6 +139,15 @@ jobs:
           ref: ${{ env.COMPOSE_WEBVIEW_COMMIT }}
           token: ${{ secrets.GITHUB_TOKEN }}
           path: compose-webview
+
+      # Downloaded after checkout, so they are newer than the native sources and
+      # the build keeps them instead of trying to rebuild on the wrong OS.
+      - name: Download WebView native libraries
+        uses: actions/download-artifact@v8
+        with:
+          pattern: webview-natives-*
+          merge-multiple: true
+          path: compose-webview/webview-compose/src/jvmMain/resources/nucleus/native
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -94,6 +169,16 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew publishToMavenLocal
+
+      - name: Verify published JVM jar carries every WebView backend
+        run: |
+          jar=$(ls ~/.m2/repository/dev/nucleusframework/composewebview-jvm/*/composewebview-jvm-*.jar | grep -v -e sources -e javadoc | head -1)
+          contents=$(unzip -l "$jar")
+          for f in linux-x64/libcompose_webview_linux.so linux-aarch64/libcompose_webview_linux.so \
+                   win32-x64/compose_webview_windows.dll win32-x64/WebView2Loader.dll \
+                   darwin-aarch64/libcompose_webview_macos.dylib darwin-x64/libcompose_webview_macos.dylib; do
+            grep -q "nucleus/native/$f" <<< "$contents" || { echo "::error::$jar is missing $f"; exit 1; }
+          done
 
       - name: Upload maven local
         uses: actions/upload-artifact@v7
