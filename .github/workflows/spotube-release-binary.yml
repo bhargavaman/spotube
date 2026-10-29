@@ -12,6 +12,19 @@ on:
           - stable
           - beta
           - nightly
+      platform:
+        description: 'Platform to build (nightly only; stable and beta always build everything)'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - android
+          - linux-x86_64
+          - linux-aarch64
+          - windows
+          - macos
+          - ios
       dry_run:
         description: 'Dry run (build & upload artifacts only, skip creating release)'
         required: false
@@ -29,66 +42,28 @@ permissions:
 
 # Never cancel a running release when another is dispatched, and let stable, beta and nightly run side by side
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.release_type }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.release_type }}-${{ inputs.platform }}
   cancel-in-progress: false
 
-env:
-  COMPOSE_WEBVIEW_REPO: KRTirtho/ComposeNativeWebview
-  COMPOSE_WEBVIEW_COMMIT: cbd36f88927298a28a2d64c6acf7ec3b2def6f9d
-
 jobs:
-  prepare-deps:
-    name: Prepare Dependencies
-    runs-on: macos-latest
+  validate-inputs:
+    name: Validate Inputs
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout ComposeNativeWebview
-        uses: actions/checkout@v7
-        with:
-          repository: ${{ env.COMPOSE_WEBVIEW_REPO }}
-          ref: ${{ env.COMPOSE_WEBVIEW_COMMIT }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: compose-webview
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Publish compose-webview to mavenLocal
-        working-directory: compose-webview
+      - name: Single platform builds are nightly only
+        if: ${{ inputs.platform != 'all' && inputs.release_type != 'nightly' }}
         run: |
-          chmod +x gradlew
-          ./gradlew publishToMavenLocal
-
-      - name: Upload maven local
-        uses: actions/upload-artifact@v7
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
+          echo "::error::Building a single platform is only supported for nightly releases"
+          exit 1
 
   build-android:
     name: Android
-    needs: prepare-deps
+    needs: validate-inputs
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'android' }}
     timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -152,7 +127,8 @@ jobs:
 
   build-linux:
     name: Linux Desktop
-    needs: prepare-deps
+    needs: validate-inputs
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'linux-x86_64' }}
     timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
@@ -160,12 +136,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Install packaging tools
         run: |
@@ -265,7 +235,8 @@ jobs:
 
   build-linux-arm64:
     name: Linux Desktop (aarch64)
-    needs: prepare-deps
+    needs: validate-inputs
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'linux-aarch64' }}
     timeout-minutes: 120
     runs-on: ubuntu-24.04-arm
     steps:
@@ -280,12 +251,6 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: tools platform-tools ndk;28.2.13676358
-
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Install packaging tools
         run: |
@@ -385,17 +350,12 @@ jobs:
 
   build-windows:
     name: Windows Desktop
-    needs: prepare-deps
+    needs: validate-inputs
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'windows' }}
     timeout-minutes: 120
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -448,17 +408,12 @@ jobs:
 
   build-macos:
     name: macOS Desktop
-    needs: prepare-deps
+    needs: validate-inputs
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'macos' }}
     timeout-minutes: 120
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -516,17 +471,12 @@ jobs:
 
   build-ios:
     name: iOS
-    needs: prepare-deps
+    needs: validate-inputs
+    if: ${{ inputs.platform == 'all' || inputs.platform == 'ios' }}
     timeout-minutes: 120
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -585,8 +535,10 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    if: ${{ !inputs.dry_run }}
+    # Skipped platform jobs count as skipped, not failed, so a single platform build still releases
+    if: ${{ !inputs.dry_run && !cancelled() && !contains(needs.*.result, 'failure') }}
     needs:
+      - validate-inputs
       - build-android
       - build-linux
       - build-linux-arm64
@@ -598,13 +550,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-
-      # The build resolves its plugins from mavenLocal, so Gradle needs the same setup as the build jobs
-      - name: Download maven local
-        uses: actions/download-artifact@v8
-        with:
-          name: maven-local
-          path: ~/.m2/repository/
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -639,6 +584,7 @@ jobs:
         uses: actions/download-artifact@v8
 
       - name: Generate release notes
+        if: ${{ inputs.platform == 'all' }}
         run: |
           echo "## Downloads" > release-notes.md
           echo "" >> release-notes.md
@@ -658,9 +604,12 @@ jobs:
           tag_name: ${{ steps.vars.outputs.tag }}
           # A new tag (stable) would otherwise point at the default branch instead of the built commit
           target_commitish: ${{ github.sha }}
-          fail_on_unmatched_files: true
-          name: ${{ steps.vars.outputs.release_name }}
-          body_path: release-notes.md
+          # A single platform build only has its own artifacts
+          fail_on_unmatched_files: ${{ inputs.platform == 'all' }}
+          # A single platform build only replaces that platform's assets (same file names are overwritten),
+          # so leave the existing release's name and notes alone
+          name: ${{ inputs.platform == 'all' && steps.vars.outputs.release_name || '' }}
+          body_path: ${{ inputs.platform == 'all' && 'release-notes.md' || '' }}
           draft: ${{ steps.vars.outputs.is_draft }}
           prerelease: ${{ steps.vars.outputs.is_prerelease }}
           files: |
