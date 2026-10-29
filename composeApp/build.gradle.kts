@@ -646,6 +646,12 @@ tasks.withType<ComposeHotRun>().configureEach {
     jvmArgs(
         "--enable-native-access=ALL-UNNAMED"
     )
+    // Linux: the hot-reload agent starts AWT before main(), and JBR's X11 toolkit pins GTK to
+    // XWayland, where the embedded WebKit WebView renders black. Tao owns the windows, so the
+    // reloadable JVM stays headless (DevTools runs in its own JVM and is unaffected).
+    if (System.getProperty("os.name").lowercase().contains("linux")) {
+        jvmArgs("-Djava.awt.headless=true")
+    }
     systemProperty(
         "compose.application.resources.dir",
         project.layout.buildDirectory.dir("compose/tmp/prepareAppResources").get()
